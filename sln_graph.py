@@ -11,7 +11,7 @@ def find_csprojs(root):
 def get_all_project_refs(csproj_path):
   """ return all csproj files referenced by the given csproj """
   proj = et.parse(csproj_path)
-  for ref in proj.iter('{http://schemas.microsoft.com/developer/msbuild/2003}ProjectReference'):
+  for ref in proj.iter('ProjectReference'):
     yield ref.attrib['Include']
 
 def build_csproj_adj_list(projects):
