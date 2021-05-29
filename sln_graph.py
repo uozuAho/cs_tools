@@ -15,7 +15,7 @@ def get_all_project_refs(csproj_path):
     yield ref.attrib['Include']
 
 def build_csproj_adj_list(projects):
-  # returns dict of proj filename -- references --> [proj filename]
+  # returns dict {proj filename : [proj filename 1, proj filename 2]}
   # NOTE: no paths - just filenames
   adj = {}
   for proj_path in projects:
@@ -32,12 +32,37 @@ def assert_all_refs_in_adj_list(adj_list):
       if adj not in adj_list:
         raise Exception('{} references {}, which was not found'.format((proj, adj)))
 
-def build_json_graph(adj_list):
+def to_json(adj_list):
   jobj = { 'nodes': [{'id': p, 'label': p} for p in adj_list], 'edges': [] }
   for p in adj_list:
     jobj['edges'].extend([{'from': p, 'to': adj} for adj in adj_list[p]])
-  return jobj
+  return json.dumps(jobj)
 
+def to_networkx(adj_list):
+  # pip install networkx
+  import networkx as nx
+  g = nx.Graph()
+  g.add_nodes_from(adj_list.keys())
+  for proj in adj_list:
+    for dep in adj_list[proj]:
+      g.add_edge(proj, dep)
+  return g
+
+def draw(adj_list):
+  # pip install networkx
+  # pip install matplotlib
+  import networkx as nx
+  import matplotlib.pyplot as plt
+  nx.draw(to_networkx(adj_list))
+  plt.show()
+
+def to_graphviz_stdout(adj_list):
+  # pip install networkx
+  # pip install pydot
+  import sys
+  import networkx as nx
+  from networkx.drawing.nx_pydot import write_dot
+  return write_dot(to_networkx(adj_list), sys.stdout)
 
 if __name__ == '__main__':
   import sys
@@ -45,5 +70,7 @@ if __name__ == '__main__':
   cs_projects = find_csprojs(root)
   adj = build_csproj_adj_list(cs_projects)
   assert_all_refs_in_adj_list(adj)
-  jobj = build_json_graph(adj)
-  print(json.dumps(jobj))
+  # print(to_json(adj))
+  # draw(adj)
+  # try https://dreampuf.github.io/GraphvizOnline or google graphviz online
+  to_graphviz_stdout(adj)
